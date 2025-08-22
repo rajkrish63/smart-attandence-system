@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Control Panel</title>
     <link rel="stylesheet" href="styles/admin.css">
     <style>
@@ -15,16 +16,6 @@
             margin: 0;
             padding: 0;
             overflow-x: hidden;
-        }
-
-        .video-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            min-width: 100%;
-            min-height: 100%;
-            z-index: -1;
-            object-fit: cover;
         }
 
         .sigma-name {
@@ -133,17 +124,10 @@
 </head>
 
 <body>
-
-    <!-- Video Background -->
-    <video autoplay muted loop class="video-bg">
-        <source src="{{ url_for('static', filename='background/vdo.mp4') }}" type="video/mp4">
-        Your browser does not support HTML5 video.
-    </video>
-
     <!-- Navbar -->
     <nav class="navbar">
         <div class="navbar-left">
-            <a href="login.html"><img src="{{ url_for('static', filename='background/lo.png') }}" alt="Logo"></a>
+            <a href="login.html"><img src="logo.png" alt="Logo"></a>
             <span class="sigma-name">Sigma</span>
         </div>
         <div class="navbar-right">
@@ -207,7 +191,9 @@
                 deleteBtn.onclick = async () => {
                     const confirmDelete = confirm(`Are you sure you want to delete ${file}?`);
                     if (confirmDelete) {
-                        await fetch(`/delete/${file}`, { method: "DELETE" });
+                        await fetch(`/delete/${file}`, {
+                            method: "DELETE"
+                        });
                         loadFiles();
                     }
                 };

@@ -1,14 +1,8 @@
-[
-    {
+{
+    "1234": {
         "S/No": 1,
-        "Roll No": "12345",
-        "Student Name": "AABB",
-        "Parent No": "98097875"
-    },
-    {
-        "S/No": 2,
-        "Roll No": "111",
-        "Student Name": "AABB",
-        "Parent No": "83836828928"
+        "Roll No": "1234",
+        "Student Name": "rajesh",
+        "Parent No": "2345"
     }
-]
+}

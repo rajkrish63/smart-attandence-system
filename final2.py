@@ -1,24 +1,23 @@
 import cv2
 import face_recognition
 import numpy as np
-import os,json
+import os, json
 from datetime import datetime
 from openpyxl import load_workbook, Workbook
 
 # === CONFIGURATION ===
 DATA_FILE = "data.xlsx"
 IMAGE_PATH = "Images"
-TODAY_FILE = f"D:/auto_attendance/output/{datetime.now().strftime('%Y-%m-%d')}.xlsx"
 
+# === Load time slots from JSON ===
 def load_time_slots():
     with open('time_slots.json', 'r') as f:
         data = json.load(f)
     return [tuple(slot) for slot in data]  # convert to list of tuples
 
-
 TIME_SLOTS = load_time_slots()
 
-# === FUNCTIONS ===
+# === Load student list from Excel ===
 def load_students():
     if not os.path.exists(DATA_FILE):
         print("Error: data.xlsx not found!")
@@ -28,15 +27,19 @@ def load_students():
     students = {}
     for row in sheet.iter_rows(min_row=2, values_only=True):
         s_no, roll_no, name, parent_no = row
-        students[name.strip().upper()] = {"S/No": s_no, "Roll No": roll_no, "Parent No": parent_no}
+        if name:  # Avoid empty rows
+            students[name.strip().upper()] = {
+                "S/No": s_no, "Roll No": roll_no, "Parent No": parent_no
+            }
     return students
 
 students = load_students()
 
+# === Load known faces from Images/ ===
 def load_known_faces():
     known_encodings = {}
     for file in os.listdir(IMAGE_PATH):
-        if file.endswith(".jpg") or file.endswith(".png"):
+        if file.lower().endswith((".jpg", ".png")):
             image_path = os.path.join(IMAGE_PATH, file)
             img = face_recognition.load_image_file(image_path)
             encoding = face_recognition.face_encodings(img)
@@ -47,10 +50,14 @@ def load_known_faces():
 
 known_faces = load_known_faces()
 
-if not os.path.exists(TODAY_FILE):
-    # Ensure output directory exists
-    os.makedirs(os.path.dirname(TODAY_FILE), exist_ok=True)
+# === Attendance File Handling ===
+BASE_DIR = os.path.join(os.getcwd(), "attendance")
+os.makedirs(BASE_DIR, exist_ok=True)
 
+today_str = datetime.now().strftime("%Y-%m-%d")
+TODAY_FILE = os.path.join(BASE_DIR, f"{today_str}.xlsx")
+
+if not os.path.exists(TODAY_FILE):
     workbook = Workbook()
     sheet = workbook.active
     sheet.append(["S/No", "Student Name"] + [f"{start}-{end}" for start, end in TIME_SLOTS])
@@ -58,11 +65,13 @@ if not os.path.exists(TODAY_FILE):
         sheet.append([info["S/No"], name] + ["Absent"] * len(TIME_SLOTS))
     workbook.save(TODAY_FILE)
 
-
 workbook = load_workbook(TODAY_FILE)
 sheet = workbook.active
 marked_names = {slot[0]: set() for slot in TIME_SLOTS}
 
+print(f"[INFO] Attendance file for today: {TODAY_FILE}")
+
+# === FUNCTIONS ===
 def get_current_slot():
     now = datetime.now().strftime("%H:%M")
     now_time = datetime.strptime(now, "%H:%M")
@@ -84,7 +93,7 @@ def mark_attendance(name):
         return
     name = name.strip().upper()
 
-    # Auto-expand header if needed
+    # Ensure all headers exist
     required_cols = len(TIME_SLOTS) + 2
     if sheet.max_column < required_cols:
         for idx, slot in enumerate(TIME_SLOTS):
@@ -98,7 +107,7 @@ def mark_attendance(name):
     except ValueError:
         print("Current slot not found in TIME_SLOTS")
         return
-    col_index = slot_index + 3  # Excel columns start from 1, +2 for name cols +1 for offset
+    col_index = slot_index + 3  # Excel: col 1=S/No, col 2=Name, col 3+=slots
 
     # Mark attendance
     for row in sheet.iter_rows(min_row=2, values_only=False):
@@ -111,8 +120,7 @@ def mark_attendance(name):
             return
     print(f"{name} not found in the sheet")
 
-
-# === PRE-PROCESSING FUNCTIONS ===
+# === PRE-PROCESSING ===
 def adjust_brightness_contrast(image):
     alpha = 1.5  # Contrast
     beta = 50    # Brightness
@@ -121,9 +129,9 @@ def adjust_brightness_contrast(image):
 def is_low_light(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     mean_brightness = np.mean(gray)
-    return mean_brightness < 50  # Tune this threshold if needed
+    return mean_brightness < 50  # Tune if needed
 
-# === FACE RECOGNITION SYSTEM ===
+# === FACE RECOGNITION LOOP ===
 video_capture = cv2.VideoCapture(0)
 
 while True:
@@ -133,7 +141,7 @@ while True:
 
     # Low-light detection
     if is_low_light(frame):
-        print(" Low light detected, skipping frame.")
+        print("Low light detected, skipping frame.")
         cv2.putText(frame, "Low Light - Please improve lighting!", (30, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
         cv2.imshow("Smart Attendance System", frame)
@@ -141,11 +149,12 @@ while True:
             break
         continue
 
-    # Pre-process image
+    # Pre-process
     small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
     bright_frame = adjust_brightness_contrast(small_frame)
     rgb_frame = cv2.cvtColor(bright_frame, cv2.COLOR_BGR2RGB)
 
+    # Face recognition
     face_locations = face_recognition.face_locations(rgb_frame)
     face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
@@ -158,7 +167,7 @@ while True:
             name = list(known_faces.keys())[best_match_index]
             mark_attendance(name)
 
-        # Draw box
+        # Draw box + label
         top, right, bottom, left = [v * 4 for v in face_location]
         cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
         cv2.putText(frame, name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)

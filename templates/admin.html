@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Control Panel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+
+        button {
+            padding: 5px 10px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+
+        .download-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+        }
+
+        .email-btn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin-bottom: 20px;
+        }
+
+        .flash-message {
+            padding: 10px;
+            background-color: #dff0d8;
+            color: #3c763d;
+            border: 1px solid #d6e9c6;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            width: 50%;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>📋 Attendance Files (Admin Dashboard)</h1>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Send Email Button -->
+    <form action="/send-email" method="POST" style="text-align: center;">
+        <button type="submit" class="email-btn">Send Email Now</button>
+    </form>
+
+    <!-- Files Table -->
+    <table id="fileTable">
+        <thead>
+            <tr>
+                <th>File Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Files will be loaded here -->
+        </tbody>
+    </table>
+
+    <script>
+        // Load file list on page load
+        async function loadFiles() {
+            const response = await fetch("/files"); // FIXED from "/" to "/files"
+            const files = await response.json();
+            const tableBody = document.querySelector("#fileTable tbody");
+            tableBody.innerHTML = "";
+
+            if (files.length === 0) {
+                tableBody.innerHTML = "<tr><td colspan='2'>No files found.</td></tr>";
+                return;
+            }
+
+            files.forEach(file => {
+                const row = document.createElement("tr");
+
+                const nameCell = document.createElement("td");
+                nameCell.textContent = file;
+
+                const actionsCell = document.createElement("td");
+
+                const downloadBtn = document.createElement("button");
+                downloadBtn.textContent = "Download";
+                downloadBtn.classList.add("download-btn");
+                downloadBtn.onclick = () => {
+                    window.location.href = `/download/${file}`;
+                };
+
+                const deleteBtn = document.createElement("button");
+                deleteBtn.textContent = "Delete";
+                deleteBtn.classList.add("delete-btn");
+                deleteBtn.onclick = async () => {
+                    const confirmDelete = confirm(`Are you sure you want to delete ${file}?`);
+                    if (confirmDelete) {
+                        await fetch(`/delete/${file}`, { method: "DELETE" });
+                        loadFiles();
+                    }
+                };
+
+                actionsCell.appendChild(downloadBtn);
+                actionsCell.appendChild(deleteBtn);
+
+                row.appendChild(nameCell);
+                row.appendChild(actionsCell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        loadFiles();
+    </script>
+
+</body>
+
+</html>

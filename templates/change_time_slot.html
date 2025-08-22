@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Change Time Slot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            margin-bottom: 30px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button.delete-btn {
+            background-color: #f44336;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Change Time Slots</h1>
+
+    <form method="POST">
+        <label for="start_time">Start Time:</label>
+        <input type="text" name="start_time" placeholder="e.g., 09:00">
+
+        <label for="end_time">End Time:</label>
+        <input type="text" name="end_time" placeholder="e.g., 10:00">
+
+        <button type="submit">Add Time Slot</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for slot in slots %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ slot[0] }}</td>
+                <td>{{ slot[1] }}</td>
+                <td>
+                    <form method="POST" action="/delete-time-slot" style="display:inline;">
+                        <input type="hidden" name="index" value="{{ loop.index0 }}">
+                        <button class="delete-btn" type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        
+    </table>
+
+</body>
+</html>

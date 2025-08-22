@@ -1,0 +1,26 @@
+[
+    {
+        "S/No": 1,
+        "Roll No": "101",
+        "Student Name": "ANBARASAN A",
+        "Parent No": "9876543210"
+    },
+    {
+        "S/No": 3,
+        "Roll No": "103",
+        "Student Name": "RAM",
+        "Parent No": "9876543211"
+    },
+    {
+        "S/No": 3,
+        "Roll No": "1234",
+        "Student Name": "AABB",
+        "Parent No": "83836828928"
+    },
+    {
+        "S/No": 4,
+        "Roll No": "1232",
+        "Student Name": "HUNTER",
+        "Parent No": "83836828928"
+    }
+]
